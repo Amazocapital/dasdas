@@ -1,29 +1,101 @@
 /**
  * Rural Café - Corretora de Café Arábica
- * JavaScript para interatividade
+ * JavaScript Premium com Animações
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // ===================================
+    // Loader
+    // ===================================
+    const loader = document.getElementById('loader');
+
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            loader.classList.add('hidden');
+        }, 1500);
+    });
+
+    // Fallback if load event already fired
+    if (document.readyState === 'complete') {
+        setTimeout(() => {
+            loader.classList.add('hidden');
+        }, 1500);
+    }
+
+    // ===================================
+    // Initialize AOS (Animate on Scroll)
+    // ===================================
+    AOS.init({
+        duration: 800,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 50,
+        delay: 0
+    });
+
+    // ===================================
     // Elements
+    // ===================================
     const header = document.getElementById('header');
     const navToggle = document.getElementById('nav-toggle');
     const nav = document.getElementById('nav');
     const navLinks = document.querySelectorAll('.nav-link');
     const contactForm = document.getElementById('contact-form');
+    const backToTop = document.getElementById('backToTop');
+    const heroSlides = document.querySelectorAll('.hero-slide');
+
+    // ===================================
+    // Hero Slider
+    // ===================================
+    let currentSlide = 0;
+    const slideInterval = 5000;
+
+    function nextSlide() {
+        heroSlides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % heroSlides.length;
+        heroSlides[currentSlide].classList.add('active');
+    }
+
+    if (heroSlides.length > 1) {
+        setInterval(nextSlide, slideInterval);
+    }
 
     // ===================================
     // Header Scroll Effect
     // ===================================
+    let lastScroll = 0;
+
     function handleScroll() {
-        if (window.scrollY > 100) {
+        const currentScroll = window.scrollY;
+
+        if (currentScroll > 100) {
             header.classList.add('scrolled');
         } else {
             header.classList.remove('scrolled');
         }
+
+        // Back to top button
+        if (currentScroll > 500) {
+            backToTop.classList.add('visible');
+        } else {
+            backToTop.classList.remove('visible');
+        }
+
+        lastScroll = currentScroll;
     }
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check on load
+    handleScroll();
+
+    // ===================================
+    // Back to Top
+    // ===================================
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
 
     // ===================================
     // Mobile Navigation Toggle
@@ -104,13 +176,116 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ===================================
+    // Counter Animation for Stats
+    // ===================================
+    const statNumbers = document.querySelectorAll('.stat-number[data-count]');
+
+    function animateCounter(element) {
+        const target = parseInt(element.getAttribute('data-count'));
+        const duration = 2000;
+        const start = 0;
+        const increment = target / (duration / 16);
+        let current = start;
+
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                element.textContent = Math.floor(current);
+                requestAnimationFrame(updateCounter);
+            } else {
+                element.textContent = target;
+            }
+        };
+
+        updateCounter();
+    }
+
+    // Intersection Observer for counter animation
+    const counterObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                counterObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    statNumbers.forEach(stat => {
+        counterObserver.observe(stat);
+    });
+
+    // ===================================
+    // Parallax Effect
+    // ===================================
+    const parallaxElements = document.querySelectorAll('.parallax-banner, .diferenciais-bg');
+
+    function handleParallax() {
+        parallaxElements.forEach(element => {
+            const scrolled = window.scrollY;
+            const rate = scrolled * 0.3;
+            element.style.backgroundPositionY = `${rate}px`;
+        });
+    }
+
+    window.addEventListener('scroll', handleParallax);
+
+    // ===================================
+    // Floating Particles in Hero
+    // ===================================
+    const particlesContainer = document.getElementById('particles');
+
+    function createParticle() {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: absolute;
+            width: ${Math.random() * 4 + 2}px;
+            height: ${Math.random() * 4 + 2}px;
+            background: rgba(196, 165, 116, ${Math.random() * 0.5 + 0.2});
+            border-radius: 50%;
+            left: ${Math.random() * 100}%;
+            top: 100%;
+            pointer-events: none;
+            animation: floatUp ${Math.random() * 10 + 10}s linear infinite;
+        `;
+        particlesContainer.appendChild(particle);
+
+        setTimeout(() => {
+            particle.remove();
+        }, 20000);
+    }
+
+    // Add floating animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Create particles periodically
+    setInterval(createParticle, 500);
+
+    // ===================================
     // Contact Form Handling
     // ===================================
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // Get form data
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
 
@@ -129,17 +304,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Simulate form submission
             const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Enviando...';
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span>Enviando...</span>';
             submitBtn.disabled = true;
 
             // Simulate API call
             setTimeout(() => {
                 showNotification('Mensagem enviada com sucesso! Entraremos em contato em breve.', 'success');
                 contactForm.reset();
-                submitBtn.textContent = originalText;
+                submitBtn.innerHTML = originalHTML;
                 submitBtn.disabled = false;
-            }, 1500);
+            }, 2000);
         });
     }
 
@@ -156,103 +331,88 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+
+        const bgColor = type === 'success' ? 'linear-gradient(135deg, #4CAF50, #45a049)' :
+                       type === 'error' ? 'linear-gradient(135deg, #f44336, #d32f2f)' :
+                       'linear-gradient(135deg, #2196F3, #1976D2)';
+
         notification.innerHTML = `
             <span class="notification-message">${message}</span>
             <button class="notification-close">&times;</button>
         `;
 
-        // Add styles
         notification.style.cssText = `
             position: fixed;
             top: 100px;
             right: 20px;
-            padding: 16px 24px;
-            border-radius: 8px;
-            background-color: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+            padding: 20px 28px;
+            border-radius: 12px;
+            background: ${bgColor};
             color: white;
             font-size: 0.95rem;
             display: flex;
             align-items: center;
-            gap: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            gap: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
             z-index: 10000;
-            animation: slideIn 0.3s ease;
+            animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             max-width: 400px;
         `;
 
         // Add animation keyframes
         if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideIn {
+            const notifStyle = document.createElement('style');
+            notifStyle.id = 'notification-styles';
+            notifStyle.textContent = `
+                @keyframes slideInRight {
                     from { transform: translateX(100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
                 }
-                @keyframes slideOut {
+                @keyframes slideOutRight {
                     from { transform: translateX(0); opacity: 1; }
                     to { transform: translateX(100%); opacity: 0; }
                 }
                 .notification-close {
-                    background: none;
+                    background: rgba(255,255,255,0.2);
                     border: none;
                     color: white;
                     font-size: 1.5rem;
                     cursor: pointer;
                     padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                     line-height: 1;
-                    opacity: 0.8;
+                    transition: all 0.3s ease;
                 }
                 .notification-close:hover {
-                    opacity: 1;
+                    background: rgba(255,255,255,0.3);
+                    transform: rotate(90deg);
                 }
             `;
-            document.head.appendChild(style);
+            document.head.appendChild(notifStyle);
         }
 
-        // Add to DOM
         document.body.appendChild(notification);
 
         // Close button functionality
         const closeBtn = notification.querySelector('.notification-close');
         closeBtn.addEventListener('click', () => {
-            notification.style.animation = 'slideOut 0.3s ease forwards';
-            setTimeout(() => notification.remove(), 300);
+            notification.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+            setTimeout(() => notification.remove(), 400);
         });
 
         // Auto remove after 5 seconds
         setTimeout(() => {
             if (notification.parentNode) {
-                notification.style.animation = 'slideOut 0.3s ease forwards';
-                setTimeout(() => notification.remove(), 300);
+                notification.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                setTimeout(() => notification.remove(), 400);
             }
         }, 5000);
     }
-
-    // ===================================
-    // Scroll Reveal Animation
-    // ===================================
-    const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-fade-up');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-
-    // Observe elements for animation
-    const animateElements = document.querySelectorAll('.servico-card, .diferencial-item, .mercado-feature, .stat-item');
-    animateElements.forEach(el => {
-        el.style.opacity = '0';
-        observer.observe(el);
-    });
 
     // ===================================
     // Phone Number Formatting
@@ -278,9 +438,107 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===================================
     // Year Update in Footer
     // ===================================
-    const yearElement = document.querySelector('.footer-bottom p');
+    const yearElement = document.getElementById('year');
     if (yearElement) {
-        const currentYear = new Date().getFullYear();
-        yearElement.innerHTML = yearElement.innerHTML.replace('2024', currentYear);
+        yearElement.textContent = new Date().getFullYear();
     }
+
+    // ===================================
+    // Image Lazy Loading
+    // ===================================
+    const lazyImages = document.querySelectorAll('img[data-src]');
+
+    const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+                imageObserver.unobserve(img);
+            }
+        });
+    });
+
+    lazyImages.forEach(img => {
+        imageObserver.observe(img);
+    });
+
+    // ===================================
+    // Tilt Effect on Cards (Desktop only)
+    // ===================================
+    if (window.innerWidth > 768) {
+        const cards = document.querySelectorAll('.servico-card, .diferencial-item');
+
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-10px)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+            });
+        });
+    }
+
+    // ===================================
+    // Typing Effect for Hero (Optional)
+    // ===================================
+    function typeWriter(element, text, speed = 50) {
+        let i = 0;
+        element.textContent = '';
+
+        function type() {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+
+        type();
+    }
+
+    // ===================================
+    // Magnetic Button Effect
+    // ===================================
+    const magneticButtons = document.querySelectorAll('.btn-glow');
+
+    magneticButtons.forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+            const rect = btn.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+
+            btn.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'translate(0, 0)';
+        });
+    });
+
+    // ===================================
+    // Preload Critical Images
+    // ===================================
+    const criticalImages = [
+        'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&q=80',
+        'https://images.unsplash.com/photo-1524350876685-274059332603?w=800&q=80'
+    ];
+
+    criticalImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
+
+    console.log('🌿 Rural Café - Site carregado com sucesso!');
 });
